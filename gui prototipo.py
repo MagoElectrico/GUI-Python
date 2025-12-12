@@ -100,7 +100,7 @@ class RiegoGUI:
 
         # indicadores
         self.lbl_lluvia.config(text=f"Lluvia: {'Sí' if lluvia else 'No'}")
-        self.lbl_tanque.config(text=f"Nivel del Tanque: {'Vacío ⚠️' if tanque else 'OK'}")
+        self.lbl_tanque.config(text=f"Nivel del Tanque: {'Vacío' if tanque else 'OK'}")
 
         self.logs_box.insert("end", f"[{tiempo}] {msg}\n")
         self.logs_box.see("end")
