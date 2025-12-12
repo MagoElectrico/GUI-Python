@@ -6,7 +6,7 @@ import socket
 import datetime
 
 
-UDP_PORT = 5005   # Debe coincidir con Node-RED
+UDP_PORT = 5005
 UDP_IP = "0.0.0.0"
 
 
@@ -16,24 +16,16 @@ class RiegoGUI:
         root.title("Sistema de Riego Automático - GUI")
         root.geometry("1200x700")
 
-        # ============================
-        #   SOCKET UDP
-        # ============================
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.sock.bind((UDP_IP, UDP_PORT))
         self.sock.setblocking(False)
 
-        # ============================
-        #   DATOS
-        # ============================
+
         self.hum_suelo1 = []
         self.hum_suelo2 = []
         self.hum_ambiente = []
         self.xdata = []
 
-        # ============================
-        #   GUI
-        # ============================
         frame_left = tk.Frame(root)
         frame_left.pack(side="left", fill="both", expand=True)
 
@@ -62,12 +54,8 @@ class RiegoGUI:
         self.logs_box = tk.Text(frame_right, height=10)
         self.logs_box.pack(fill="both", padx=5)
 
-        # empezar lectura
         self.leer_udp()
 
-    # ===================================================
-    #   RECEPCIÓN UDP
-    # ===================================================
     def leer_udp(self):
         try:
             data, addr = self.sock.recvfrom(1024)
@@ -78,14 +66,9 @@ class RiegoGUI:
         except BlockingIOError:
             pass
 
-        # volver a preguntar cada 100 ms
         self.root.after(100, self.leer_udp)
 
-    # ===================================================
-    #   PROCESAR DATOS ENVIADOS DESDE NODE-RED
-    # ===================================================
     def procesar_datos(self, msg):
-        # Esperado: SOIL1=40;SOIL2=55;AMB=62;RAIN=0;TANK=1
         campos = msg.split(";")
         datos = {}
 
@@ -113,20 +96,15 @@ class RiegoGUI:
             self.hum_suelo2.pop(0)
             self.hum_ambiente.pop(0)
 
-        # actualizar gráficas
         self.update_plots()
 
         # indicadores
         self.lbl_lluvia.config(text=f"Lluvia: {'Sí' if lluvia else 'No'}")
         self.lbl_tanque.config(text=f"Nivel del Tanque: {'Vacío ⚠️' if tanque else 'OK'}")
 
-        # log
         self.logs_box.insert("end", f"[{tiempo}] {msg}\n")
         self.logs_box.see("end")
 
-    # ===================================================
-    #        ACTUALIZAR GRÁFICAS
-    # ===================================================
     def update_plots(self):
         for ax in self.axs:
             ax.clear()
