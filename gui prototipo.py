@@ -81,12 +81,11 @@ class RiegoGUI:
     def leer_udp(self):
         recibido = False
         try:
-            while True:
-                data, _ = self.sock.recvfrom(1024)
-                self.procesar_datos(data.decode().strip())
-                recibido = True
+            data, _ = self.sock.recvfrom(1024)
+            self.procesar_datos(data.decode().strip())
+            recibido = True
         except BlockingIOError:
-            pass
+            recibido = False
 
         self.lbl_estado.config(
             text="" if recibido else "Modo de espera: ningún dispositivo conectado"
@@ -99,15 +98,24 @@ class RiegoGUI:
         for campo in msg.split(";"):
             if "=" in campo:
                 k, v = campo.split("=")
-                datos[k] = int(v)
+                if k in ["SOIL1", "SOIL2", "RAIN", "TANK"]:
+                    try:
+                        datos[k] = int(v)
+                    except ValueError:
+                        datos[k] = 0
+                else:
+                    try:
+                        datos[k] = float(v)
+                    except ValueError:
+                        datos[k] = 0.0
 
         self.lluvia = datos.get("RAIN", 0)
         self.nivel_tanque = datos.get("TANK", 0)
-        self.temp_ambiente = datos.get("TEMP", 0)
+        self.temp_ambiente = datos.get("TEMP", 0.0)
 
         h1 = datos.get("SOIL1", 0)
         h2 = datos.get("SOIL2", 0)
-        amb = datos.get("AMB", 0)
+        amb = datos.get("AMB", 0.0)
 
         tiempo = datetime.datetime.now().strftime("%H:%M:%S")
 
@@ -122,12 +130,13 @@ class RiegoGUI:
             self.hum_suelo2.pop(0)
             self.hum_ambiente.pop(0)
 
-        self.lbl_lluvia.config(text=f"Lluvia: {'Sí 🌧️' if self.lluvia else 'No ☀️'}")
+        self.lbl_lluvia.config(text=f"Lluvia: {'Está lloviendo' if self.lluvia else 'No está lloviendo'}")
 
         self.update_plots()
         self.update_gauge(self.ax_tank, self.canvas_tank, self.nivel_tanque, "%", 100)
         self.update_gauge(self.ax_temp, self.canvas_temp, self.temp_ambiente, "°C", 50)
 
+        
         self.logs.insert("end", f"[{tiempo}] {msg}\n")
         self.logs.see("end")
 
